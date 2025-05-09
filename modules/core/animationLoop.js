@@ -3,6 +3,7 @@ import { updateDodgeIndicator } from './controls.js';
 import { showMathQuiz } from '../ui/mathQuiz.js';
 import { createMinion } from '../entities/minion.js';
 import { loadTextures } from '../utils/textureLoader.js';
+import { showFeedbackForm } from '../ui/feedbackForm.js';
 
 function createSmokeExplosion(scene, position, smokeBombTexture) {
   const smokeParticleCount = 20;
@@ -203,6 +204,23 @@ function advanceToNextLevel(currentLevel, levelIndicator, hero, minions, scene, 
     
     // For Level 3, just show the message, no further game action yet
     instructions.innerHTML = 'You cleared Level 2! Level 3 is under construction.';
+    
+    // Show feedback form after 1 second
+    setTimeout(() => {
+      showFeedbackForm(feedbackData => {
+        console.log('Feedback submitted:', feedbackData);
+        // Send feedback data to Supabase
+        if (window.GameData && window.GameData.saveFormSubmission) {
+          window.GameData.saveFormSubmission(feedbackData)
+            .then(result => {
+              console.log('Feedback saved to Supabase:', result);
+            })
+            .catch(error => {
+              console.error('Error saving feedback:', error);
+            });
+        }
+      });
+    }, 1000);
   }
 }
 
@@ -786,23 +804,37 @@ export function animationLoop(
         duration: 2000
       });
       
-      // Reset hero after delay
+      // Show feedback form after 1 second
       setTimeout(() => {
-        // Reset hero
-        hero.health = 100;
-        hero.position.x = 0;
-        hero.position.y = 1.5;
-        hero.position.z = 0;
-        hero.velocity.x = 0;
-        hero.velocity.y = 0;
-        hero.falling = false;
-        hero.grounded = true;
-        hero.isInvulnerable = true;
-        hero.lastHit = Date.now();
-        
-        // Update health bar
-        updateHealthBar(hero.health);
-      }, 2500);
+        showFeedbackForm(feedbackData => {
+          console.log('Feedback submitted:', feedbackData);
+          // Send feedback data to Supabase
+          if (window.GameData && window.GameData.saveFormSubmission) {
+            window.GameData.saveFormSubmission(feedbackData)
+              .then(result => {
+                console.log('Feedback saved to Supabase:', result);
+              })
+              .catch(error => {
+                console.error('Error saving feedback:', error);
+              });
+          }
+          
+          // Reset hero after delay
+          hero.health = 100;
+          hero.position.x = 0;
+          hero.position.y = 1.5;
+          hero.position.z = 0;
+          hero.velocity.x = 0;
+          hero.velocity.y = 0;
+          hero.falling = false;
+          hero.grounded = true;
+          hero.isInvulnerable = true;
+          hero.lastHit = Date.now();
+          
+          // Update health bar
+          updateHealthBar(hero.health);
+        });
+      }, 1000);
     }
     
     // Rooftop boundaries and falling effect
@@ -887,7 +919,6 @@ function updateSpriteOrientation(hero, villain) {
 
 function handleHeroFalling(hero, camera, villain, minions, scene, gameState, updateHealthBar, speechBubble, trail) {
   hero.falling = true;
-  hero.grounded = false;
   
   // Show falling notification
   createNotification('GAME RESTART', { 
@@ -912,59 +943,74 @@ function handleHeroFalling(hero, camera, villain, minions, scene, gameState, upd
   
   // Full game restart
   setTimeout(() => {
-    // Reset hero position and parameters to initial state
-    hero.position.x = 0;
-    hero.position.y = 1.5;
-    hero.position.z = 0;
-    hero.velocity.x = 0;
-    hero.velocity.y = 0;
-    hero.falling = false;
-    hero.grounded = true;
-    hero.health = 100;
-    hero.isInvulnerable = true;
-    hero.lastHit = Date.now();
-    hero.isDodging = false;
-    hero.lastDodge = 0;
-    
-    // Reset villain position and make it visible again
-    villain.group.position.set(3, 1.5, 0);
-    villain.group.visible = true;
-    villain.sprite.material.opacity = 1.0;
-    villain.glowSprite.material.opacity = 0.3;
-    
-    // Reset minions by removing them from the scene
-    minions.forEach(minion => {
-      if (minion.group) {
-        scene.remove(minion.group);
+    // Show feedback form
+    showFeedbackForm(feedbackData => {
+      console.log('Feedback submitted:', feedbackData);
+      // Send feedback data to Supabase
+      if (window.GameData && window.GameData.saveFormSubmission) {
+        window.GameData.saveFormSubmission(feedbackData)
+          .then(result => {
+            console.log('Feedback saved to Supabase:', result);
+          })
+          .catch(error => {
+            console.error('Error saving feedback:', error);
+          });
       }
-    });
-    minions.length = 0; // Clear the minions array
-    
-    // Reset game state variables
-    gameState.minionsSpawned = false;
-    gameState.minionsFought = 0;
-    gameState.gamePhase = "gameplay";
-    gameState.movementLocked = true;
-    
-    // Update health bar
-    updateHealthBar(hero.health);
-    
-    // Show restart notification
-    createNotification('GAME RESTARTED', { duration: 2000 });
-    
-    // Show villain speech bubble for 3 seconds
-    speechBubble.style.opacity = '1';
-    speechBubble.style.left = '60%';
-    speechBubble.style.top = '30%';
-    setTimeout(() => { speechBubble.style.opacity = '0'; }, 3000);
-    
-    // After 2 seconds, create vanishing effect for villain and unlock hero movement
-    setTimeout(() => {
-      villain.fadeOut(() => {
-        gameState.movementLocked = false;
-        hero.createPulseEffect(trail);
+      
+      // Reset hero position and parameters to initial state
+      hero.position.x = 0;
+      hero.position.y = 1.5;
+      hero.position.z = 0;
+      hero.velocity.x = 0;
+      hero.velocity.y = 0;
+      hero.falling = false;
+      hero.grounded = true;
+      hero.health = 100;
+      hero.isInvulnerable = true;
+      hero.lastHit = Date.now();
+      hero.isDodging = false;
+      hero.lastDodge = 0;
+      
+      // Reset villain position and make it visible again
+      villain.group.position.set(3, 1.5, 0);
+      villain.group.visible = true;
+      villain.sprite.material.opacity = 1.0;
+      villain.glowSprite.material.opacity = 0.3;
+      
+      // Reset minions by removing them from the scene
+      minions.forEach(minion => {
+        if (minion.group) {
+          scene.remove(minion.group);
+        }
       });
-    }, 2000);
+      minions.length = 0; // Clear the minions array
+      
+      // Reset game state variables
+      gameState.minionsSpawned = false;
+      gameState.minionsFought = 0;
+      gameState.gamePhase = "gameplay";
+      gameState.movementLocked = true;
+      
+      // Update health bar
+      updateHealthBar(hero.health);
+      
+      // Show restart notification
+      createNotification('GAME RESTARTED', { duration: 2000 });
+      
+      // Show villain speech bubble for 3 seconds
+      speechBubble.style.opacity = '1';
+      speechBubble.style.left = '60%';
+      speechBubble.style.top = '30%';
+      setTimeout(() => { speechBubble.style.opacity = '0'; }, 3000);
+      
+      // After 2 seconds, create vanishing effect for villain and unlock hero movement
+      setTimeout(() => {
+        villain.fadeOut(() => {
+          gameState.movementLocked = false;
+          hero.createPulseEffect(trail);
+        });
+      }, 2000);
+    });
   }, 2000);
 }
 

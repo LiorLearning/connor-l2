@@ -12,6 +12,7 @@ import { createSmokeBombCollectible } from './modules/collectibles/smokeBomb.js'
 import { showMathQuiz } from './modules/ui/mathQuiz.js';
 import { createMinion } from './modules/entities/minion.js';
 import { animationLoop } from './modules/core/animationLoop.js';
+import { showUserLoginForm } from './modules/ui/userLogin.js';
 // import { setupAudio } from './modules/core/audio.js';
 
 function initGame() {
@@ -95,5 +96,41 @@ function initGame() {
   });
 }
 
-// Start the game immediately
-initGame();
+// Wait for Supabase to be ready, then show login form and start the game when user submits name
+document.addEventListener('DOMContentLoaded', () => {
+  // If Supabase is already ready, show the login form
+  if (window.GameData && window.GameData.ready) {
+    showUserLoginForm(username => {
+      // Save user to Supabase
+      window.GameData.saveUser(username)
+        .then(result => {
+          console.log('User saved:', result);
+          // Start the game after username is submitted
+          initGame();
+        })
+        .catch(error => {
+          console.error('Error saving user:', error);
+          // Start the game anyway, even if there's an error saving the user
+          initGame();
+        });
+    });
+  } else {
+    // If Supabase is not ready yet, wait for the 'supabase-ready' event
+    document.addEventListener('supabase-ready', () => {
+      showUserLoginForm(username => {
+        // Save user to Supabase
+        window.GameData.saveUser(username)
+          .then(result => {
+            console.log('User saved:', result);
+            // Start the game after username is submitted
+            initGame();
+          })
+          .catch(error => {
+            console.error('Error saving user:', error);
+            // Start the game anyway, even if there's an error saving the user
+            initGame();
+          });
+      });
+    });
+  }
+});
